@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/SaiNageswarS/agent-boot/agentboot"
+	"github.com/SaiNageswarS/agent-boot/llm"
 	"github.com/SaiNageswarS/go-api-boot/embed"
 	"github.com/SaiNageswarS/go-api-boot/logger"
 	"github.com/SaiNageswarS/go-api-boot/odm"
@@ -16,16 +18,25 @@ import (
 
 // QueryController handles HTTP requests for query operations
 type QueryController struct {
-	search *mcp.SearchTool
+	tool               *mcp.SearchTool
+	toolResultRenderer *agentboot.ToolResultRenderer
 }
 
 // ProvideQueryController creates a new QueryController instance
+// Creates a minimal agent with just the tool (no orchestration components)
+// to leverage RunTool's nice wrappers (markdown formatting, summarization, etc.)
 func ProvideQueryController(mongo odm.MongoClient, embedder embed.Embedder) *QueryController {
 	chunkRepository := odm.CollectionOf[db.ChunkModel](mongo, "devinderhealthcare")
 	vectorRepository := odm.CollectionOf[db.ChunkAnnModel](mongo, "devinderhealthcare")
 
+	search := mcp.NewSearchTool(chunkRepository, vectorRepository, embedder)
+	llmClient := llm.NewAnthropicClient("claude-3-5-haiku-20241022")
+
+	toolResultRenderer := agentboot.NewToolResultRenderer(agentboot.WithSummarizationModel(llmClient))
+
 	return &QueryController{
-		search: mcp.NewSearchTool(chunkRepository, vectorRepository, embedder),
+		tool:               search,
+		toolResultRenderer: toolResultRenderer,
 	}
 }
 
@@ -45,27 +56,36 @@ func (c *QueryController) HandleQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Process query using RAG service
-	passages := c.search.Run(r.Context(), req.Query)
+	// Use agent.RunTool which provides nice wrappers (markdown formatting, summarization, etc.)
+	// without needing full agent orchestration
+	ctx := r.Context()
+	toolResultsChan := c.tool.Run(ctx, req.Query)
 
-	for passage := range passages {
-		logger.Info("Passage", zap.String("title", passage.Title))
+	formattedResult, err := c.toolResultRenderer.Render(ctx, req.Query, "", toolResultsChan, true)
+	if err != nil {
+		logger.Error("Failed to render tool results", zap.Error(err))
+		http.Error(w, "Failed to render tool results", http.StatusInternalServerError)
+		return
 	}
 
 	// Create response
 	response := model.QueryResponse{
 		Query:    req.Query,
-		Passages: []model.Passage{},
+		Passages: formattedResult,
 	}
+
+	// Set response headers
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
 	// Send response
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Error("Failed to encode response", zap.Error(err))
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		// Note: Can't call http.Error here as headers may already be written
 		return
 	}
 
-	logger.Info("Query processed successfully", zap.String("query", req.Query), zap.Int("passages_count", len(passages)))
+	logger.Info("Query processed successfully", zap.String("query", req.Query))
 }
 
 func (c *QueryController) Routes() []server.Route {

@@ -34,8 +34,8 @@ github.com/AzureAD/microsoft-authentication-extensions-for-go/cache v0.1.1/go.mo
 github.com/AzureAD/microsoft-authentication-library-for-go v1.4.2 h1:oygO0locgZJe7PpYPXT5A29ZkwJaPqcva7BVeemZOZs=
 github.com/AzureAD/microsoft-authentication-library-for-go v1.4.2/go.mod h1:wP83P5OoQ5p6ip3ScPr0BAq0BvuPAvacpEuSzyouqAI=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/SaiNageswarS/agent-boot v1.0.41 h1:TpDF7ar1AALuJXBnVTB1ZJKITFNFQSiVji0bJ7FapsE=
-github.com/SaiNageswarS/agent-boot v1.0.41/go.mod h1:jUpexGHNkq0Y1WFKAXza49ciWofGD096iYuGmEu/ORg=
+github.com/SaiNageswarS/agent-boot v1.0.42 h1:O8mYL/VUOy1YqcUDAj1BKrfl8uMTtey30N87yA3H/R8=
+github.com/SaiNageswarS/agent-boot v1.0.42/go.mod h1:jUpexGHNkq0Y1WFKAXza49ciWofGD096iYuGmEu/ORg=
 github.com/SaiNageswarS/go-api-boot v1.0.38 h1:Wvor8qioIZEcCs0hdMHD/TM+7CqjEg/IqEEIss9nckg=
 github.com/SaiNageswarS/go-api-boot v1.0.38/go.mod h1:ZeEfikqpTE35VA/N5ijXwuOsBni7gZVlXfXFX7b6n78=
 github.com/SaiNageswarS/go-collection-boot v1.0.7 h1:Rc59oPZnwDeEWcCPFORdpw7S+venqQDdgULeSeY+agM=
