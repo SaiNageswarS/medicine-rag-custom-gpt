@@ -1,0 +1,120 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Homeopathy Medicinal Knowledge Base",
+    "description": "Retrieves relevant information from Homeopathy Medicinal Knowledge Base",
+    "version": "v1.0.0",
+    "contact": {
+      "name": "API Support",
+      "url": "https://medicine-rag-open-ai-api.thankfuldesert-900a9965.centralindia.azurecontainerapps.io"
+    },
+    "x-privacy-policy-url": "https://medicine-rag-open-ai-api.thankfuldesert-900a9965.centralindia.azurecontainerapps.io/privacy-policy"
+  },
+  "servers": [
+    {
+      "url": "https://medicine-rag-open-ai-api.thankfuldesert-900a9965.centralindia.azurecontainerapps.io"
+    }
+  ],
+  "paths": {
+    "/query": {
+      "post": {
+        "description": "Get relevant passages of remedies for input health condition",
+        "operationId": "GetHomeopathyRemedies",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with relevant passages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid or missing query"
+          },
+          "401": {
+            "description": "Unauthorized - invalid or missing API key"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/privacy-policy": {
+      "get": {
+        "description": "Get the privacy policy for this API",
+        "operationId": "GetPrivacyPolicy",
+        "responses": {
+          "200": {
+            "description": "Privacy policy HTML page",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for authentication. Can also be provided in Authorization header as Bearer token."
+      }
+    },
+    "schemas": {
+      "QueryRequest": {
+        "type": "object",
+        "required": ["query"],
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Query string to search regarding the health condition"
+          }
+        }
+      },
+      "QueryResponse": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Echo of the original query"
+          },
+          "passages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Retrieved passages with source and title information"
+          }
+        }
+      }
+    }
+  }
+}
