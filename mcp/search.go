@@ -13,7 +13,7 @@ import (
 	"github.com/SaiNageswarS/go-collection-boot/async"
 	"github.com/SaiNageswarS/go-collection-boot/ds"
 	"github.com/SaiNageswarS/go-collection-boot/linq"
-	"github.com/SaiNageswarS/open-ai-api/db"
+	"github.com/SaiNageswarS/medicine-rag-custom-gpt/db"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"

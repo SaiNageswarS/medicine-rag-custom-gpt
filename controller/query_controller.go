@@ -14,10 +14,10 @@ import (
 	"github.com/SaiNageswarS/go-api-boot/logger"
 	"github.com/SaiNageswarS/go-api-boot/odm"
 	"github.com/SaiNageswarS/go-api-boot/server"
-	"github.com/SaiNageswarS/open-ai-api/db"
-	"github.com/SaiNageswarS/open-ai-api/mcp"
-	"github.com/SaiNageswarS/open-ai-api/model"
-	"github.com/SaiNageswarS/open-ai-api/templates"
+	"github.com/SaiNageswarS/medicine-rag-custom-gpt/db"
+	"github.com/SaiNageswarS/medicine-rag-custom-gpt/mcp"
+	"github.com/SaiNageswarS/medicine-rag-custom-gpt/model"
+	"github.com/SaiNageswarS/medicine-rag-custom-gpt/templates"
 	"go.uber.org/zap"
 )
 

@@ -11,7 +11,7 @@ import (
 	"github.com/SaiNageswarS/go-api-boot/logger"
 	"github.com/SaiNageswarS/go-api-boot/odm"
 	"github.com/SaiNageswarS/go-api-boot/server"
-	"github.com/SaiNageswarS/open-ai-api/controller"
+	"github.com/SaiNageswarS/medicine-rag-custom-gpt/controller"
 	"go.uber.org/zap"
 )
 

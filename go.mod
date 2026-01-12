@@ -1,4 +1,4 @@
-module github.com/SaiNageswarS/open-ai-api
+module github.com/SaiNageswarS/medicine-rag-custom-gpt
 
 go 1.24.4
 
