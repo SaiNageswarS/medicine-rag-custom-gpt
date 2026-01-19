@@ -6,11 +6,13 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/SaiNageswarS/go-api-boot/config"
 	"github.com/SaiNageswarS/go-api-boot/dotenv"
 	"github.com/SaiNageswarS/go-api-boot/embed"
 	"github.com/SaiNageswarS/go-api-boot/logger"
 	"github.com/SaiNageswarS/go-api-boot/odm"
 	"github.com/SaiNageswarS/go-api-boot/server"
+	"github.com/SaiNageswarS/medicine-rag-custom-gpt/appconfig"
 	"github.com/SaiNageswarS/medicine-rag-custom-gpt/controller"
 	"go.uber.org/zap"
 )
@@ -18,12 +20,19 @@ import (
 func main() {
 	dotenv.LoadEnv()
 
+	// load config file
+	ccfgg := &appconfig.AppConfig{}
+	err := config.LoadConfig("config.ini", ccfgg)
+
 	boot, err := server.New().
 		GRPCPort(":50051").
 		HTTPPort(":8081").
+		Provide(ccfgg).
 		ProvideFunc(odm.ProvideMongoClient).
 		ProvideFunc(embed.ProvideJinaAIEmbeddingClient).
 		AddRestController(controller.ProvideQueryController).
+		AddRestController(controller.ProvidePrivacyController).
+		AddRestController(controller.ProvideMetadataController).
 		Build()
 
 	if err != nil {
