@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/SaiNageswarS/agent-boot/agentboot"
 	"github.com/SaiNageswarS/agent-boot/llm"
@@ -14,7 +14,6 @@ import (
 	"github.com/SaiNageswarS/medicine-rag-custom-gpt/db"
 	"github.com/SaiNageswarS/medicine-rag-custom-gpt/mcp"
 	"github.com/SaiNageswarS/medicine-rag-custom-gpt/middleware"
-	"github.com/SaiNageswarS/medicine-rag-custom-gpt/model"
 	"go.uber.org/zap"
 )
 
@@ -44,18 +43,12 @@ func ProvideQueryController(mongo odm.MongoClient, embedder embedder.Embedder, c
 	}
 }
 
-// HandleQuery handles POST requests to process queries from ChatGPT custom GPT
 func (c *QueryController) HandleQuery(w http.ResponseWriter, r *http.Request) {
-	// Decode request body
-	var req model.QueryRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		logger.Error("Failed to decode request", zap.Error(err))
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
+	// Get query from URL parameters
+	query := r.URL.Query().Get("query")
 
 	// Validate query
-	if req.Query == "" {
+	if query == "" {
 		http.Error(w, "Query is required", http.StatusBadRequest)
 		return
 	}
@@ -63,40 +56,34 @@ func (c *QueryController) HandleQuery(w http.ResponseWriter, r *http.Request) {
 	// Use agent.RunTool which provides nice wrappers (markdown formatting, summarization, etc.)
 	// without needing full agent orchestration
 	ctx := r.Context()
-	toolResultsChan := c.tool.Run(ctx, req.Query)
+	toolResultsChan := c.tool.Run(ctx, query)
 
-	formattedResult, err := c.toolResultRenderer.Render(ctx, req.Query, "", toolResultsChan, c.ccfg.EnableSearchSummarization)
+	formattedPassages, err := c.toolResultRenderer.Render(ctx, query, "", toolResultsChan, c.ccfg.EnableSearchSummarization)
 	if err != nil {
 		logger.Error("Failed to render tool results", zap.Error(err))
 		http.Error(w, "Failed to render tool results", http.StatusInternalServerError)
 		return
 	}
 
-	// Create response
-	response := model.QueryResponse{
-		Query:    req.Query,
-		Passages: formattedResult,
-	}
-
-	// Set response headers
-	w.Header().Set("Content-Type", "application/json")
+	// Set response headers for markdown
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 
-	// Send response
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		logger.Error("Failed to encode response", zap.Error(err))
-		// Note: Can't call http.Error here as headers may already be written
+	// Send markdown response directly (concatenate with two newlines)
+	markdownResponse := strings.Join(formattedPassages, "\n---\n\n")
+	if _, err := w.Write([]byte(markdownResponse)); err != nil {
+		logger.Error("Failed to write response", zap.Error(err))
 		return
 	}
 
-	logger.Info("Query processed successfully", zap.String("query", req.Query))
+	logger.Info("Query processed successfully", zap.String("query", query))
 }
 
 func (c *QueryController) Routes() []server.Route {
 	return []server.Route{
 		{
-			Pattern: "/query",
-			Method:  http.MethodPost,
+			Pattern: "/search",
+			Method:  http.MethodGet,
 			Handler: middleware.APIKeyAuthMiddleware(c.HandleQuery),
 		},
 	}

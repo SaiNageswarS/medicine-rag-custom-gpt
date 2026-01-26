@@ -3,7 +3,7 @@ module github.com/SaiNageswarS/medicine-rag-custom-gpt
 go 1.24.4
 
 require (
-	github.com/SaiNageswarS/agent-boot v1.0.42
+	github.com/SaiNageswarS/agent-boot v1.0.43
 	github.com/SaiNageswarS/go-api-boot v1.0.38
 	github.com/SaiNageswarS/go-collection-boot v1.0.7
 	go.mongodb.org/mongo-driver/v2 v2.2.2
