@@ -25,9 +25,9 @@ const (
 	rrfK               = 60  // “dampening” constant from the RRF paper
 	textSearchWeight   = 1.0 // optional per-engine weights
 	vectorSearchWeight = 1.0
-	vecK               = 20 // # of hits to keep from each engine
-	textK              = 20
-	maxChunks          = 20
+	vecK               = 10 // # of hits to keep from each engine
+	textK              = 10
+	maxChunks          = 10
 )
 
 type SearchTool struct {

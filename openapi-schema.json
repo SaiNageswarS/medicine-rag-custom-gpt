@@ -2,80 +2,73 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Homeopathy Medicinal Knowledge Base",
-    "description": "Retrieves relevant information from Homeopathy Medicinal Knowledge Base",
-    "version": "v1.0.0",
-    "contact": {
-      "name": "API Support",
-      "url": "https://medicine-rag-open-ai-api.thankfuldesert-900a9965.centralindia.azurecontainerapps.io"
-    },
-    "x-privacy-policy-url": "https://medicine-rag-open-ai-api.thankfuldesert-900a9965.centralindia.azurecontainerapps.io/privacy-policy"
+    "description": "Retrieves homeopathy knowledge as markdown context for LLM grounding.",
+    "version": "1.0.0"
   },
   "servers": [
     {
       "url": "https://medicine-rag-open-ai-api.thankfuldesert-900a9965.centralindia.azurecontainerapps.io"
     }
   ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
   "paths": {
-    "/query": {
-      "post": {
-        "description": "Get relevant passages of remedies for input health condition",
-        "operationId": "GetHomeopathyRemedies",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/QueryRequest"
-              }
-            }
-          }
-        },
-        "security": [
+    "/search": {
+      "get": {
+        "operationId": "SearchHomeopathyKnowledge",
+        "summary": "Search homeopathy knowledge base",
+        "description": "Returns relevant passages as markdown text to be injected directly into the model context.",
+        "parameters": [
           {
-            "ApiKeyAuth": []
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Health condition or symptom query."
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful response with relevant passages",
+            "description": "Markdown content with relevant passages",
+            "content": {
+              "text/markdown": {
+                "schema": {
+                  "type": "string",
+                  "description": "Markdown-formatted passages suitable for direct prompt grounding."
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid or missing query parameter" },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/metadata/sources": {
+      "get": {
+        "operationId": "ListKnowledgeSources",
+        "summary": "List available knowledge sources",
+        "description": "Returns the list of sources indexed in the backend knowledge base.",
+        "responses": {
+          "200": {
+            "description": "Available sources",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QueryResponse"
+                  "$ref": "#/components/schemas/SourcesResponse"
                 }
               }
             }
           },
-          "400": {
-            "description": "Bad request - invalid or missing query"
-          },
-          "401": {
-            "description": "Unauthorized - invalid or missing API key"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "deprecated": false
-      }
-    },
-    "/privacy-policy": {
-      "get": {
-        "description": "Get the privacy policy for this API",
-        "operationId": "GetPrivacyPolicy",
-        "responses": {
-          "200": {
-            "description": "Privacy policy HTML page",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "deprecated": false
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
       }
     }
   },
@@ -84,36 +77,21 @@
       "ApiKeyAuth": {
         "type": "apiKey",
         "in": "header",
-        "name": "X-API-Key",
-        "description": "API key for authentication. Can also be provided in Authorization header as Bearer token."
+        "name": "X-API-Key"
       }
     },
     "schemas": {
-      "QueryRequest": {
+      "SourcesResponse": {
         "type": "object",
-        "required": ["query"],
+        "additionalProperties": false,
         "properties": {
-          "query": {
-            "type": "string",
-            "description": "Query string to search regarding the health condition"
-          }
-        }
-      },
-      "QueryResponse": {
-        "type": "object",
-        "properties": {
-          "query": {
-            "type": "string",
-            "description": "Echo of the original query"
-          },
-          "passages": {
+          "sources": {
             "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Retrieved passages with source and title information"
+            "items": { "type": "string" },
+            "description": "List of source names available in the knowledge base."
           }
-        }
+        },
+        "required": ["sources"]
       }
     }
   }
