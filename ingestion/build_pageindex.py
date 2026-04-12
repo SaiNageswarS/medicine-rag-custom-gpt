@@ -28,6 +28,7 @@ import glob
 import json
 import os
 import sys
+import time
 
 from dotenv import load_dotenv
 
@@ -127,6 +128,12 @@ async def main():
         default=None,
         help="MongoDB connection URI (default: MONGO_URI env var)",
     )
+    parser.add_argument(
+        "--delay",
+        type=float,
+        default=5.0,
+        help="Seconds to wait between files to avoid rate limits (default: 5)",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -217,6 +224,11 @@ async def main():
         except Exception as e:
             print(f"  !! Failed: {e}", file=sys.stderr)
             failed.append((basename, str(e)))
+
+        # Delay between files to stay under rate limits
+        if i < len(md_files) and args.delay > 0:
+            print(f"  Waiting {args.delay}s before next file...")
+            await asyncio.sleep(args.delay)
 
     # Save combined index
     combined_file = os.path.join(args.output_dir, "all_articles_index.json")

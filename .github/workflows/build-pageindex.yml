@@ -11,7 +11,7 @@ on:
       model:
         description: "LLM model to use"
         required: false
-        default: "gpt-4.1"
+        default: "gpt-5.4-mini"
         type: string
 
 jobs:
@@ -56,8 +56,12 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
+          # litellm retry settings for OpenAI rate limits
+          LITELLM_NUM_RETRIES: "5"
+          LITELLM_RETRY_AFTER: "2"
+          LITELLM_REQUEST_TIMEOUT: "120"
         run: |
-          ARGS="--with-summaries --with-text --model ${{ inputs.model }}"
+          ARGS="--with-summaries --with-text --model ${{ inputs.model }} --delay 5"
           if [ "${{ inputs.article }}" != "all" ]; then
             ARGS="$ARGS --single ${{ inputs.article }}"
           fi
