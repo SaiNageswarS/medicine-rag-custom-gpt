@@ -1,324 +1,140 @@
-# RAG API for ChatGPT Custom GPT
+# Homeopathy Knowledge Base — RAG API for ChatGPT Custom GPT
 
-A Retrieval-Augmented Generation (RAG) API designed for integration with ChatGPT's custom GPT feature. This API accepts queries and returns relevant passages with source and title information for citation.
-
-## Features
-
-- **RAG Integration**: Retrieves relevant passages based on semantic query matching
-- **ChatGPT Compatible**: Designed specifically for ChatGPT custom GPT Actions
-- **API Key Authentication**: Secure API access with configurable API keys
-- **Privacy Policy**: Built-in privacy policy endpoint for OpenAI compliance
-- **Structured Responses**: Returns formatted passages with source and title information
-- **Vector Database**: Integrated with MongoDB for vector similarity search
-
-## API Endpoints
-
-### POST /query
-
-Main RAG endpoint for retrieving passages based on a query. This endpoint is designed to be called by ChatGPT custom GPT Actions.
-
-**Authentication:** Required - API key must be provided in `Authorization: Bearer <key>` header or `X-API-Key` header.
-
-**Request:**
-```json
-{
-  "query": "homeopathy remedies for headache"
-}
-```
-
-**Response:**
-```json
-{
-  "query": "homeopathy remedies for headache",
-  "passages": [
-    "**Belladonna**\n\nSource: Homeopathy Materia Medica\n\nBelladonna is indicated for sudden, intense headaches with throbbing pain, especially in the temples...",
-    "**Bryonia**\n\nSource: Homeopathy Materia Medica\n\nBryonia is useful for headaches that worsen with movement and improve with rest..."
-  ]
-}
-```
-
-**Error Responses:**
-- `400 Bad Request`: Invalid request payload or missing query
-- `401 Unauthorized`: Missing or invalid API key
-- `500 Internal Server Error`: Server error processing the request
-
-### GET /privacy-policy
-
-Privacy policy endpoint that serves an HTML page with the API's privacy policy. This endpoint is required for OpenAI Custom GPT public actions.
-
-**Authentication:** Not required
-
-**Response:** HTML page with privacy policy content
-
-## Configuration
-
-### Environment Variables
-
-Create a `.env` file in the project root with the following variables:
-
-```bash
-# Required: API key for authenticating requests
-API_KEY=your-secret-api-key-here
-
-# MongoDB connection string (if using MongoDB)
-MONGO_URI=mongodb://localhost:27017
-
-# Other environment variables as needed by your dependencies
-```
-
-**Important:** The `API_KEY` environment variable is required. The API will return a 500 error if it's not set.
-
-## Running the API
-
-1. **Install dependencies:**
-```bash
-go mod download
-```
-
-2. **Set environment variables:**
-```bash
-export API_KEY="your-secret-api-key-here"
-# Or use a .env file (loaded automatically via dotenv)
-```
-
-3. **Run the server:**
-```bash
-go run main.go
-```
-
-The server will start on `http://localhost:8081`
-
-## Testing the API
-
-### Using curl:
-
-```bash
-# Privacy policy (no authentication required)
-curl http://localhost:8081/privacy-policy
-
-# RAG query with API key in X-API-Key header
-curl -X POST http://localhost:8081/query \
-  -H "X-API-Key: your-secret-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "homeopathy remedies for cold"}'
-
-# RAG query with API key in Authorization header
-curl -X POST http://localhost:8081/query \
-  -H "Authorization: Bearer your-secret-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "homeopathy remedies for cold"}'
-```
-
-### Using the built binary:
-
-```bash
-# Build
-go build -o rag-api main.go
-
-# Run
-./rag-api
-```
-
-## ChatGPT Custom GPT Configuration
-
-To integrate this RAG API with a custom GPT in ChatGPT, follow these steps:
-
-### Step 1: Deploy the API
-
-Deploy this API to a publicly accessible server (e.g., AWS, Google Cloud, Azure, or any hosting service). Ensure:
-- The API is accessible via HTTPS
-- CORS is enabled (already included in the code)
-- The server has proper SSL/TLS certificates
-
-### Step 2: Configure Custom GPT Action
-
-1. Go to [ChatGPT Custom GPTs](https://chat.openai.com/gpts)
-2. Create a new GPT or edit an existing one
-3. Navigate to the **Actions** section
-4. Click **Create new action**
-5. Configure the action as follows:
-
-#### Action Configuration:
-
-- **Name**: `search_knowledge_base` (or any descriptive name)
-- **Description**: `Search the knowledge base for relevant information using RAG`
-
-#### Authentication:
-- Select **API Key** authentication
-- **Auth Type**: API Key
-- **Header Name**: `X-API-Key` (or use `Authorization` header with Bearer token)
-- **API Key**: Enter the API key you configured in your environment (`API_KEY`)
-
-#### Schema:
-
-**Recommended:** Use the provided `openapi-schema.json` file directly. It includes:
-- Complete OpenAPI 3.1.0 specification
-- API key authentication configuration
-- Privacy policy URL
-- All request/response schemas
-
-1. Copy the contents of `openapi-schema.json` from this repository
-2. Update the `servers.url` field with your deployed API URL
-3. Update the `x-privacy-policy-url` in the `info` section if needed
-4. Paste the schema into ChatGPT's action configuration
-
-**Manual Configuration (Alternative):**
-
-If you prefer to configure manually, use the following schema:
-
-**Request Body Schema:**
-```json
-{
-  "type": "object",
-  "properties": {
-    "query": {
-      "type": "string",
-      "description": "Query string to search regarding the health condition"
-    }
-  },
-  "required": ["query"]
-}
-```
-
-**Response Schema:**
-```json
-{
-  "type": "object",
-  "properties": {
-    "query": {
-      "type": "string",
-      "description": "Echo of the original query"
-    },
-    "passages": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Retrieved passages with source and title information (formatted as markdown)"
-    }
-  }
-}
-```
-
-**Security Scheme:**
-- **Type**: API Key
-- **In**: Header
-- **Name**: `X-API-Key`
-- **Description**: API key for authentication. Can also be provided in Authorization header as Bearer token.
-
-### Step 3: Test the Integration
-
-1. Save your custom GPT configuration
-2. In the ChatGPT interface, test the action by asking questions
-3. The custom GPT will automatically call your RAG API and use the retrieved passages to generate responses
-
-### Example Custom GPT Instructions
-
-Add these instructions to your custom GPT to help it use the RAG API effectively:
-
-```
-You are a helpful assistant with access to a knowledge base through a RAG (Retrieval-Augmented Generation) API.
-
-When users ask questions:
-1. Use the search_knowledge_base action to retrieve relevant passages
-2. Cite sources using the "source" field from the passages
-3. Combine information from multiple passages when relevant
-4. If no relevant passages are found, let the user know and provide general assistance
-
-Always cite your sources using the format: [Source: title](source URL)
-```
-
-## Data Structure
-
-### QueryRequest
-- `query` (string, required): The search query regarding the health condition
-
-### QueryResponse
-- `query` (string): Echo of the original query
-- `passages` (array of string): Retrieved passages formatted as markdown strings, each containing source and title information
-
-**Note:** The passages are returned as formatted markdown strings that include the remedy name, source information, and relevant text content. This format is optimized for ChatGPT's display and citation capabilities.
-
-## Production Implementation
-
-The current implementation uses mock data for demonstration. To use in production:
-
-1. **Replace Mock Service**: Update `service/query_service.go` to use a real vector database:
-   - **Pinecone**: Popular managed vector database
-   - **Weaviate**: Open-source vector database
-   - **Qdrant**: High-performance vector search engine
-   - **FAISS**: Facebook AI Similarity Search (for self-hosted)
-
-2. **Add Embedding Model**: Integrate an embedding model to convert queries and documents to vectors:
-   - OpenAI `text-embedding-ada-002` or `text-embedding-3-small`
-   - Cohere embedding models
-   - Open-source alternatives (Sentence Transformers)
-
-3. **Document Indexing**: Set up a pipeline to:
-   - Ingest documents from your knowledge base
-   - Generate embeddings for each document chunk
-   - Store embeddings and metadata in the vector database
-
-4. **Semantic Search**: The current implementation uses:
-   - Vector similarity search via MongoDB Atlas Vector Search
-   - Hybrid search (combining keyword and semantic search)
-   - Embedding-based retrieval using Jina AI embeddings
-
-5. **Authentication**: API key authentication is already implemented. Ensure you:
-   - Set a strong `API_KEY` environment variable
-   - Use HTTPS in production
-   - Rotate API keys periodically
-   - Monitor API usage for security
+A Retrieval-Augmented Generation API for homeopathy materia medica, designed for integration with ChatGPT Custom GPT Actions. Uses [PageIndex](https://github.com/VectifyAI/PageIndex) for vectorless, reasoning-based retrieval.
 
 ## Architecture
 
 ```
-ChatGPT Custom GPT
-    ↓ (HTTP POST)
-RAG API (/query endpoint)
-    ↓
-QueryService (ProcessQuery)
-    ↓
-Vector Database / Knowledge Base
-    ↓
-Retrieved Passages
-    ↓ (HTTP Response)
-ChatGPT Custom GPT (with citations)
+┌─────────────────┐         ┌──────────────────────────────────────┐
+│  Python Ingestion│         │        Go API Server                 │
+│                  │         │                                      │
+│  PageIndex       │         │  GET /documents                      │
+│  md_to_tree()   ─┼──write──▶  GET /documents/{id}/structure      │
+│                  │  Mongo  │  GET /documents/{id}/content?lines=  │
+│  articles/*.md   │         │                                      │
+└─────────────────┘         │  GET /search        (hybrid search)  │
+                            └──────────┬───────────────────────────┘
+                                       │
+                            ┌──────────▼───────────────────────────┐
+                            │  ChatGPT Custom GPT                  │
+                            │                                      │
+                            │  1. /documents → pick medicines      │
+                            │  2. /documents/{id}/structure →      │
+                            │     read summaries, pick sections    │
+                            │  3. /documents/{id}/content →        │
+                            │     get full text for grounding      │
+                            └──────────────────────────────────────┘
 ```
 
-## Development
+### Retrieval Approaches
 
-### Project Structure
+**PageIndex (reasoning-based, vectorless)** — ChatGPT navigates a hierarchical tree index with AI-generated summaries to locate relevant sections. No vector DB or embedding needed for this path.
+
+**Hybrid Search (vector + keyword)** — Traditional RAG using MongoDB Atlas Vector Search with Jina AI embeddings, combined with BM25 keyword search via Reciprocal Rank Fusion.
+
+## API Endpoints
+
+| Endpoint | Auth | Description |
+|---|---|---|
+| `GET /documents` | Yes | List all medicines with AI-generated descriptions |
+| `GET /documents/{id}/structure` | Yes | Tree structure with section titles and summaries |
+| `GET /documents/{id}/content?lines=10-25` | Yes | Full text for specific line ranges |
+| `GET /search?query=...` | Yes | Hybrid vector + keyword search |
+| `GET /metadata/sources` | Yes | List indexed sources |
+| `GET /privacy-policy` | No | Privacy policy (required by OpenAI) |
+
+**Authentication:** API key via `X-API-Key` header or `Authorization: Bearer <key>`.
+
+## Quick Start
+
+### 1. Run the Go API server
+
+```bash
+# Set environment variables (or use .env file)
+export API_KEY="your-secret-api-key"
+export MONGO_URI="mongodb+srv://..."
+
+go mod download
+go run main.go
+# Server starts on http://localhost:8081
+```
+
+### 2. Ingest articles with PageIndex
+
+```bash
+# Install Python dependencies
+pip3 install --upgrade pageindex python-dotenv pymongo
+
+# Set env vars
+export OPENAI_API_KEY="your-openai-key"
+export MONGO_URI="mongodb+srv://..."
+
+# Build index on all articles and write to MongoDB
+python3 ingestion/build_pageindex.py --with-summaries --with-text
+
+# Or process a single article
+python3 ingestion/build_pageindex.py --with-summaries --with-text --single ACONITUM.md
+
+# Or test locally without MongoDB
+python3 ingestion/build_pageindex.py --json-only --single ACONITUM.md
+```
+
+### 3. Configure ChatGPT Custom GPT
+
+1. Create a Custom GPT at [chat.openai.com/gpts](https://chat.openai.com/gpts)
+2. In **Actions**, paste the contents of `openapi-schema.json`
+3. Update the `servers.url` to your deployed API URL
+4. Set the API key under Authentication → API Key → `X-API-Key`
+
+## Ingestion via GitHub Actions
+
+The ingestion pipeline can be triggered manually via GitHub Actions:
+
+1. Go to **Actions → Build PageIndex & Ingest to MongoDB**
+2. Click **Run workflow**
+3. Choose `all` or a specific filename (e.g. `ACONITUM.md`)
+
+The workflow reads `OPENAI_API_KEY` and `MONGO_URI` from repository secrets. Ingestion is idempotent — re-running on the same file overwrites the existing index.
+
+## Project Structure
 
 ```
 .
-├── main.go              # Application entry point
-├── controller/          # HTTP request handlers
-│   └── query_controller.go
-├── service/            # Business logic
-│   └── query_service.go
-├── model/              # Data models
-│   └── query.go
-└── routes/             # Route registration
-    └── routes.go
+├── main.go                  # Entry point, DI wiring
+├── controller/
+│   ├── pageindex_controller.go  # /documents endpoints (PageIndex tree navigation)
+│   ├── query_controller.go      # /search endpoint (hybrid search)
+│   ├── metadata_controller.go   # /metadata/sources
+│   └── privacy_controller.go    # /privacy-policy
+├── db/
+│   ├── pageindex_model.go       # PageIndex document + node tree model
+│   ├── chunk_model.go           # Chunk model for hybrid search
+│   └── chunk_ann_model.go       # Vector embedding model
+├── mcp/
+│   └── search.go                # Hybrid search (vector + BM25 + RRF)
+├── ingestion/
+│   ├── build_pageindex.py       # PageIndex tree builder + MongoDB ingester
+│   ├── add_headings.py          # Markdown heading normalizer
+│   └── split_materia_medica.py  # Splits source book into per-medicine files
+├── articles/                    # Markdown articles (one per medicine)
+├── openapi-schema.json          # OpenAPI spec for ChatGPT Custom GPT
+├── .github/workflows/
+│   └── build-pageindex.yml      # Manual workflow for ingestion
+└── config.ini                   # App config
 ```
 
-## Security Notes
+## Environment Variables
 
-- **API Key**: Always use a strong, randomly generated API key. Never commit API keys to version control.
-- **HTTPS**: Always use HTTPS in production. The API should only be accessible over encrypted connections.
-- **Environment Variables**: Store sensitive configuration (API keys, database credentials) in environment variables, not in code.
-- **Privacy Policy**: The `/privacy-policy` endpoint is required for OpenAI Custom GPT public actions and must be publicly accessible.
+| Variable | Required | Description |
+|---|---|---|
+| `API_KEY` | Yes | API key for authenticating requests |
+| `MONGO_URI` | Yes | MongoDB connection string |
+| `OPENAI_API_KEY` | Ingestion only | OpenAI key for PageIndex summary generation |
+| `JINA_API_KEY` | Hybrid search | Jina AI key for embeddings |
 
-## Notes
+## Security
 
-- The API includes CORS headers to allow cross-origin requests from ChatGPT
-- All endpoints return JSON responses (except `/privacy-policy` which returns HTML)
-- Error responses follow standard HTTP status codes
-- The implementation uses MongoDB with vector search capabilities
-- Passages are formatted as markdown strings for optimal ChatGPT integration
-- The OpenAPI schema file (`openapi-schema.json`) is ready to use for ChatGPT Custom GPT configuration
-
-## License
-
-This project is provided as-is for integration with ChatGPT custom GPTs.
+- API key authentication on all data endpoints
+- HTTPS required in production
+- Ingestion script validates filenames to prevent path traversal
+- Store secrets in environment variables, never in code

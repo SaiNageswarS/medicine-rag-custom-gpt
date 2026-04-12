@@ -70,6 +70,95 @@
           "500": { "description": "Internal server error" }
         }
       }
+    },
+    "/documents": {
+      "get": {
+        "operationId": "ListDocuments",
+        "summary": "List all medicine documents with descriptions",
+        "description": "Returns all indexed medicine documents with their AI-generated descriptions. Use this first to identify which medicines are relevant to the user's query, then drill into specific documents.",
+        "responses": {
+          "200": {
+            "description": "List of documents with descriptions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DocumentSummary" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/documents/{docId}/structure": {
+      "get": {
+        "operationId": "GetDocumentStructure",
+        "summary": "Get tree structure of a medicine document",
+        "description": "Returns the hierarchical tree index with section titles and AI-generated summaries. Use this to reason about which sections contain the information you need, then fetch those sections via the content endpoint.",
+        "parameters": [
+          {
+            "name": "docId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Document ID (e.g. ACONITUM, BRYONIA)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tree structure with summaries",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PageIndexTree" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Document not found" }
+        }
+      }
+    },
+    "/documents/{docId}/content": {
+      "get": {
+        "operationId": "GetDocumentContent",
+        "summary": "Get full text for specific sections by line range",
+        "description": "Returns the full text content for tree nodes whose line numbers fall within the requested range. Use line numbers from the structure endpoint to target specific sections.",
+        "parameters": [
+          {
+            "name": "docId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Document ID (e.g. ACONITUM, BRYONIA)"
+          },
+          {
+            "name": "lines",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Line range to fetch (e.g. '10-25' or '5,12,30')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content for matching nodes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/NodeContent" }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid or missing lines parameter" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Document not found" }
+        }
+      }
     }
   },
   "components": {
@@ -92,6 +181,46 @@
           }
         },
         "required": ["sources"]
+      },
+      "DocumentSummary": {
+        "type": "object",
+        "properties": {
+          "docId": { "type": "string", "description": "Unique document identifier" },
+          "docName": { "type": "string", "description": "Medicine name" },
+          "docDescription": { "type": "string", "description": "AI-generated description of the document" },
+          "lineCount": { "type": "integer", "description": "Total line count of the source document" }
+        },
+        "required": ["docId", "docName"]
+      },
+      "PageIndexNode": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "node_id": { "type": "string" },
+          "line_num": { "type": "integer", "description": "Line number in the source markdown file" },
+          "summary": { "type": "string", "description": "AI summary of leaf node content" },
+          "prefix_summary": { "type": "string", "description": "AI summary of parent node content" },
+          "nodes": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PageIndexNode" },
+            "description": "Child nodes"
+          }
+        },
+        "required": ["title", "node_id", "line_num"]
+      },
+      "PageIndexTree": {
+        "type": "array",
+        "items": { "$ref": "#/components/schemas/PageIndexNode" },
+        "description": "Hierarchical tree structure of the document"
+      },
+      "NodeContent": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "line_num": { "type": "integer" },
+          "text": { "type": "string", "description": "Full text content of the section" }
+        },
+        "required": ["title", "line_num", "text"]
       }
     }
   }

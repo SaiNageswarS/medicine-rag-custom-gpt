@@ -33,6 +33,7 @@ func main() {
 		AddRestController(controller.ProvideQueryController).
 		AddRestController(controller.ProvidePrivacyController).
 		AddRestController(controller.ProvideMetadataController).
+		AddRestController(controller.ProvidePageIndexController).
 		Build()
 
 	if err != nil {

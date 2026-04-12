@@ -1,0 +1,67 @@
+name: Build PageIndex & Ingest to MongoDB
+
+on:
+  workflow_dispatch:
+    inputs:
+      article:
+        description: 'Article filename (e.g. ACONITUM.md) or "all" to process every article'
+        required: true
+        default: "all"
+        type: string
+      model:
+        description: "LLM model to use"
+        required: false
+        default: "gpt-4.1"
+        type: string
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          ssh-key: ${{ secrets.ARTICLES_DEPLOY_KEY }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install --upgrade pageindex python-dotenv pymongo
+
+      - name: Validate article input
+        run: |
+          ARTICLE="${{ inputs.article }}"
+          if [ "$ARTICLE" != "all" ]; then
+            # Must be a plain .md filename, no slashes or path traversal
+            if echo "$ARTICLE" | grep -qE '[/\\]|\.\.'; then
+              echo "::error::Invalid article name. Use a plain filename like ACONITUM.md"
+              exit 1
+            fi
+            if [ ! -f "articles/$ARTICLE" ]; then
+              echo "::error::File articles/$ARTICLE not found in repository"
+              exit 1
+            fi
+          fi
+
+      - name: Build PageIndex and ingest
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          ARGS="--with-summaries --with-text --model ${{ inputs.model }}"
+          if [ "${{ inputs.article }}" != "all" ]; then
+            ARGS="$ARGS --single ${{ inputs.article }}"
+          fi
+          python ingestion/build_pageindex.py $ARGS
+
+      - name: Upload JSON artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pageindex-results
+          path: results/
+          retention-days: 30
