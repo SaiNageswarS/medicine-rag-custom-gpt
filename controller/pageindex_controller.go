@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -182,34 +183,45 @@ func extractPathParam(path, prefix, suffix string) string {
 	return before
 }
 
-// parseLineRange parses "10-25" or "5,12,30" into min and max line numbers.
+// parseLineRange parses line specifications into min and max line numbers.
+// Supported formats:
+//   - "10-25"           single range
+//   - "5,12,30"         comma-separated line numbers
+//   - "19-34,321-349"   comma-separated ranges
 func parseLineRange(s string) (int, int, error) {
-	if strings.Contains(s, "-") {
-		parts := strings.SplitN(s, "-", 2)
-		start, err := strconv.Atoi(strings.TrimSpace(parts[0]))
-		if err != nil {
-			return 0, 0, err
-		}
-		end, err := strconv.Atoi(strings.TrimSpace(parts[1]))
-		if err != nil {
-			return 0, 0, err
-		}
-		return start, end, nil
-	}
-
-	// comma-separated: find min and max
-	parts := strings.Split(s, ",")
 	min, max := int(^uint(0)>>1), 0
-	for _, p := range parts {
-		n, err := strconv.Atoi(strings.TrimSpace(p))
-		if err != nil {
-			return 0, 0, err
+	for _, seg := range strings.Split(s, ",") {
+		seg = strings.TrimSpace(seg)
+		if seg == "" {
+			continue
 		}
-		if n < min {
-			min = n
-		}
-		if n > max {
-			max = n
+		if strings.Contains(seg, "-") {
+			parts := strings.SplitN(seg, "-", 2)
+			start, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+			if err != nil {
+				return 0, 0, err
+			}
+			end, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+			if err != nil {
+				return 0, 0, err
+			}
+			if start < min {
+				min = start
+			}
+			if end > max {
+				max = end
+			}
+		} else {
+			n, err := strconv.Atoi(seg)
+			if err != nil {
+				return 0, 0, err
+			}
+			if n < min {
+				min = n
+			}
+			if n > max {
+				max = n
+			}
 		}
 	}
 	return min, max, nil
