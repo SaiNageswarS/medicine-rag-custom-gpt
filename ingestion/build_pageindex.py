@@ -3,7 +3,10 @@
 
 Usage:
     # 1. Install dependencies:
-    pip3 install --upgrade pageindex python-dotenv pymongo
+    git clone --depth 1 https://github.com/VectifyAI/PageIndex.git /tmp/PageIndex
+    pip3 install --upgrade python-dotenv pymongo
+    pip3 install --upgrade -r /tmp/PageIndex/requirements.txt
+    export PYTHONPATH=/tmp/PageIndex
 
     # 2. Set environment variables in a .env file at the project root:
     #   OPENAI_API_KEY=your_key_here

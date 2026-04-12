@@ -31,7 +31,11 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install --upgrade pageindex python-dotenv pymongo
+        run: |
+          pip install --upgrade python-dotenv pymongo
+          git clone --depth 1 https://github.com/VectifyAI/PageIndex.git /tmp/PageIndex
+          pip install --upgrade -r /tmp/PageIndex/requirements.txt
+          echo "PYTHONPATH=/tmp/PageIndex" >> $GITHUB_ENV
 
       - name: Validate article input
         run: |
