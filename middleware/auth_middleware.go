@@ -53,3 +53,13 @@ func APIKeyAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
+
+// APIKeyAuthHandler wraps an http.Handler with the same API key validation.
+// Suitable for use with WithMCPMiddleware and similar handler-level middleware.
+func APIKeyAuthHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		APIKeyAuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})(w, r)
+	})
+}

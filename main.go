@@ -15,6 +15,7 @@ import (
 	"github.com/SaiNageswarS/medicine-rag-custom-gpt/appconfig"
 	"github.com/SaiNageswarS/medicine-rag-custom-gpt/controller"
 	mcptools "github.com/SaiNageswarS/medicine-rag-custom-gpt/mcp"
+	"github.com/SaiNageswarS/medicine-rag-custom-gpt/middleware"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"go.uber.org/zap"
 )
@@ -65,6 +66,7 @@ func main() {
 		}, &mcp.ServerOptions{
 			Instructions: ASSISTANT_INSTRUCTIONS,
 		}).
+		WithMCPMiddleware(middleware.APIKeyAuthHandler).
 		AddMCPConfigurator(mcptools.ProvidePageIndexMcp).
 		Build()
 

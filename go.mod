@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/SaiNageswarS/agent-boot v1.0.43
-	github.com/SaiNageswarS/go-api-boot v1.0.43
+	github.com/SaiNageswarS/go-api-boot v1.0.44
 	github.com/SaiNageswarS/go-collection-boot v1.0.7
 	github.com/modelcontextprotocol/go-sdk v1.5.0
 	go.mongodb.org/mongo-driver/v2 v2.2.2
