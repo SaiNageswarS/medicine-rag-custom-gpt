@@ -9,9 +9,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// APIKeyAuthMiddleware validates API key from Authorization header or X-API-Key header
+// APIKeyAuthMiddleware validates API key from Authorization header or X-API-Key header.
+// Requests with a valid Mcp-Session-Id are allowed through without an API key,
+// since the session was already authenticated during the initialize handshake.
 func APIKeyAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// If the request already carries a session ID, the client was authenticated
+		// during the MCP initialize call. The MCP framework validates the session
+		// ID itself, so we can skip API key checks here.
+		if r.Header.Get("Mcp-Session-Id") != "" {
+			next(w, r)
+			return
+		}
+
 		apiKey := os.Getenv("API_KEY")
 		if apiKey == "" {
 			logger.Error("API_KEY environment variable is not set")
@@ -19,9 +29,10 @@ func APIKeyAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Check for API key in Authorization header (Bearer token) or X-API-Key header
+		// Check for API key in Authorization header (Bearer token), X-API-Key header, or query parameter
 		authHeader := r.Header.Get("Authorization")
 		apiKeyHeader := r.Header.Get("X-API-Key")
+		queryKey := r.URL.Query().Get("api_key")
 
 		var providedKey string
 		if authHeader != "" {
@@ -35,6 +46,8 @@ func APIKeyAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			}
 		} else if apiKeyHeader != "" {
 			providedKey = apiKeyHeader
+		} else if queryKey != "" {
+			providedKey = queryKey
 		}
 
 		if providedKey == "" {
